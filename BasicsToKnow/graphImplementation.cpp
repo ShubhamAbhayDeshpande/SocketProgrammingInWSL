@@ -11,6 +11,12 @@ The code and the explanation for it can be foud in the link https://www.geeksfor
 #include<utility> // required for using "pair" 
 #include<vector>
 
+// Define infinity value
+#define INFI 999    
+
+// Define the dimensions of square matrix used to define graph 
+#define V 6
+
 using namespace std;
 
 class Graph
@@ -67,6 +73,18 @@ int main()
     g.add_edge(1,0,5);
     g.add_edge(2,0,6);
     g.add_edge(1,2,6);
+    g.add_edge(1,3,7);
     g.printGratph();
+
+    // Matrix repersentation of the graph where the element at position i,j will be the weight at the edge joining i and j
+    int matrixGraph[V][V] = {
+        //  1, 2, 3, 4, 5, 6
+        {   0, 4, 2, 0, 0, 0 },  // From vertex 0
+        {   0, 0, 1, 5, 0, 0 },  // From vertex 1
+        {   0, 0, 0, 8, 10, 0 }, // From vertex 2
+        {   0, 0, 0, 0, 2, 6 },  // From vertex 3
+        {   0, 0, 0, 0, 0, 3 },  // From vertex 4
+        {   0, 0, 0, 0, 0, 0 }   // From vertex 5
+    };
 }
 
