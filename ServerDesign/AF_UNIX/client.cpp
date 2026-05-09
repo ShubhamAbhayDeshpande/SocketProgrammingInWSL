@@ -1,0 +1,122 @@
+#include<iostream>
+#include<cstring> // For using the memset() and strcpy()
+#include<cstdlib> // Used to define EXIT_FAILURE. It means that the program failed to execute and exited with error code 1. 
+#include<sys/socket.h> // Used for socket() and connect()
+#include<sys/un.h> // Used to define sockaddr_un which holds all the information about the socket address. It will be used as a blueprint to create structure 'addr'
+#include<unistd.h> // For using the close(), read() and write() system calls
+
+// Define the socket name and buffer size
+#define SOCKET_NAME "/tmp/DemoSocket"
+#define BUFFER_SIZE 128
+
+using namespace std;
+
+int main()
+{
+    // ===================================================
+    // 1. Creating Socket
+    // ===================================================
+    int sockfd;
+    sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
+
+    // Raise error if the socket connection failed
+    if (sockfd < 0)
+    {
+        cerr<<"Socket creation failed"<<endl;
+        return EXIT_FAILURE;
+    }
+
+    // If the socket is created successfully
+    cout<<"Socket created succeessfully"<<endl;
+
+    // ===================================================
+    // 2. Creating address structure
+    // ===================================================
+
+    struct sockaddr_un addr; // This creates memeory to store all the information about the socket address. 
+
+    // Clear structure memory
+    memset(&addr, 0, sizeof(addr)); // Clear the entire structure by replacing any values stored in the structure with 0. 
+
+    // Specify address family. 
+    addr.sun_family = AF_UNIX; // Since, this is communication between processes, the family will be AF_UNIX
+
+    // Specify socket path
+    strcpy(addr.sun_path, SOCKET_NAME);
+
+    // ===================================================
+    // 3. Connect to server
+    // ===================================================
+
+    int result;
+
+    // Using the connect() system call. For more information read https://man7.org/linux/man-pages/man2/connect.2.html#:~:text=The%20connect()%20system%20call,(2)%20for%20further%20details.
+    result = connect(
+        sockfd, // File descriptor. In this case, the value should be SOCK_STREAM to emulate TCP. To emulate UDP, the value is SOCK_DGRAM 
+        (struct sockaddr*)&addr, // Socket address, already specified in the step 2
+         sizeof(addr) // Length of the socket address
+        ); 
+
+    // Check if the connection to the socket was successfull. If not, raise error. 
+    if (result < 0)
+    {
+        cerr<<"Connection to the server socket failed"<<endl;
+    }
+
+    cout<<"Connection to the server socket successfull"<<endl;
+
+    // ===================================================
+    // 4. Send message to Server
+    // ===================================================
+
+    const char* message = "Hello from client";
+
+    // Using wirte() system call
+    write(
+        sockfd, // File Descriptor 
+        message, // Pointer to the memeory containing data
+        strlen(message) // Size of the message
+    );
+
+    cout<<"Message sent to the server"<<endl;
+
+    // ===================================================
+    // 5. Read response from the server
+    // ===================================================
+
+    char buffer[1024]; // Character buffer to store the response
+
+    memset(buffer, 0, sizeof(buffer)); // Clear the created buffer
+
+    int byteRead;
+
+    byteRead = read(
+        sockfd, // File descriptor
+        buffer, 
+        sizeof(buffer)
+    );
+
+    if (byteRead <0)
+    {
+        cerr<<"Could not read server response. Closing socket"<<endl;
+        close(sockfd); // Closing socket
+        return EXIT_FAILURE;
+    }
+    // Since read() already knows the size of the defined buffer, it will not let the overflow happen.
+    // Following code shows the user that the respoonse might be truncated
+    if (byteRead == sizeof(buffer))
+    {
+        cerr<<"Buffer completely filled \nResponse might be truncated"<<endl;
+    }
+
+    cout<<"The server says: "<<buffer<<endl;
+
+    // ===================================================
+    // 6. Closing the socket at the end
+    // ===================================================
+
+    close(sockfd);
+    cout<<"Socket closed"<<endl;
+    
+    return 0;
+}
