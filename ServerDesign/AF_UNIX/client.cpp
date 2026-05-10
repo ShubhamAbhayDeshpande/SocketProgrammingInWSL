@@ -1,3 +1,10 @@
+/*
+This is the client side functionality of the process. 
+
+It has system calls such as connect() which will initicalize a file descriptor for the connection to server
+The server side functionality is in the file server.
+
+*/
 #include<iostream>
 #include<cstring> // For using the memset() and strcpy()
 #include<cstdlib> // Used to define EXIT_FAILURE. It means that the program failed to execute and exited with error code 1. 
@@ -7,7 +14,7 @@
 
 // Define the socket name and buffer size
 #define SOCKET_NAME "/tmp/DemoSocket"
-#define BUFFER_SIZE 128
+#define BUFFER_SIZE 1024
 
 using namespace std;
 
@@ -84,7 +91,7 @@ int main()
     // 5. Read response from the server
     // ===================================================
 
-    char buffer[1024]; // Character buffer to store the response
+    char buffer[BUFFER_SIZE]; // Character buffer to store the response
 
     memset(buffer, 0, sizeof(buffer)); // Clear the created buffer
 
