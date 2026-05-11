@@ -7,7 +7,7 @@ When the connection is made to the client,
 #include<iostream>
 #include<cstring>
 #include<cstdlib>
-#include<sys/socket.h>
+#include<sys/socket.h> // Used for system calls bind(), accept(), listen() and unlink().
 #include<sys/un.h>
 #include<unistd.h>
 
@@ -166,7 +166,7 @@ int main()
     // Close connectionSocket
     close(connectionSocket);
 
-    // Unlink the socket
+    // Unlink the socket. This is needed because, if for any reason, the server crashes, the next time bind() tries to find the file system object, the object already exists. unlink() is used to delete the existing file sytem object.
     unlink(SOCKET_NAME);
     
     return 0;
