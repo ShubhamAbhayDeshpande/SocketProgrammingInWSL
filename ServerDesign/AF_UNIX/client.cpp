@@ -73,35 +73,31 @@ int main()
     cout<<"Connection to the server socket successfull"<<endl;
 
     // ===================================================
-    // 4. Send message to Server
+    // 4. Send integers to server one at a time
     // ===================================================
 
-    const char* message = "Hello from client";
+    int nums[] = {10, 20, 30, 40, 0};
 
-    // Using wirte() system call
-    write(
-        sockfd, // File Descriptor 
-        message, // Pointer to the memeory containing data
-        strlen(message) // Size of the message
-    );
+    // Count how many number to send to the server
+    int numCount = sizeof(nums) / sizeof(nums[0]);
 
+    // Recursively send the numbers to the server
+    for (int i =0 ; i< numCount; i++)
+    {
+        write(sockfd, &nums[i], sizeof(int));
+        cout<<"Sent: "<<nums[i]<< endl;
+    }
     cout<<"Message sent to the server"<<endl;
 
     // ===================================================
     // 5. Read response from the server
     // ===================================================
 
-    char buffer[BUFFER_SIZE]; // Character buffer to store the response
-
-    memset(buffer, 0, sizeof(buffer)); // Clear the created buffer
+    // The server will send back the sum of the integers as a result
+    int serverResult;
 
     int byteRead;
-
-    byteRead = read(
-        sockfd, // File descriptor
-        buffer, 
-        sizeof(buffer)
-    );
+    byteRead = read(sockfd, &serverResult, sizeof(int));
 
     if (byteRead <0)
     {
@@ -109,14 +105,9 @@ int main()
         close(sockfd); // Closing socket
         return EXIT_FAILURE;
     }
-    // Since read() already knows the size of the defined buffer, it will not let the overflow happen.
-    // Following code shows the user that the respoonse might be truncated
-    if (byteRead == sizeof(buffer))
-    {
-        cerr<<"Buffer completely filled \nResponse might be truncated"<<endl;
-    }
 
-    cout<<"The server says: "<<buffer<<endl;
+
+    cout<<"The server says sum is: "<<serverResult<<endl;
 
     // ===================================================
     // 6. Closing the socket at the end
