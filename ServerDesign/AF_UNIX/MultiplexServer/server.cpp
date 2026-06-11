@@ -79,6 +79,19 @@ static int get_max_fd()
     return max_fd;
 }
 
+static void remove_from_monitored_fd_set(int client_socket_fd)
+{
+    for (int i = 0; i < MAX_CLIENT_SUPPORT; i++)
+    {
+        if (monitored_fd_set[i] == -1)
+        {
+            continue;
+        }
+        monitored_fd_set[i] = -1;
+        break;
+    }
+}
+
 
 
 
@@ -153,12 +166,108 @@ int main()
 
         cout<<"Waiting on select() system call"<<endl;
 
+        // Using blocking select() system call 
         select(get_max_fd()+1, &readfds, NULL, NULL, NULL);
 
+        // Case 1: Server receives a connection request from a new client 
+        // -------------------------------------------------------------------------------------------
+        // Check if the client is trying to connect to the master file descriptor, i.e. master socket
+        if (FD_ISSET(connection_socket, &readfds))
+        {
+            cout<<"New connection request received from the client."<<endl;
 
+            // Accept the connection rquest
+            int data_socket = accept(connection_socket, nullptr, nullptr);
+
+            if (data_socket < 0)
+            {
+                cerr<<"accept() system call failed."<<endl;
+                return(EXIT_FAILURE);
+            }
+            cout<<"Connection request from client (fd="<<data_socket<<") accepted by the server"<<endl;
+            add_to_monitor_fd_set(data_socket);
+        }
+        // Case 2: The server receives new data from already connected client
+        // -------------------------------------------------------------------------------------------
+        else
+        {
+            // The inner for loop to check every file descriptor. Because, we don't know exactly who is sending the data.
+            for(int i=0; i < MAX_CLIENT_SUPPORT ; i++)
+            {   
+                // Iterate over all the file descriptors
+                int comm_socket_fd = monitored_fd_set[i];
+
+                // Condition A: The file descriptor in the array has value -1. The 'continue' statement will skip the rest of the for-loop
+                // and directly goes to the i+1 element in the array.
+                if (comm_socket_fd == -1)
+                {
+                    continue;
+                }
+                
+                // Condition B: If the file descriptor at position 'i' in the array is not the one sending the data, The 'continue' statement will skip the rest of the for-loop
+                // and directly goes to the i+1 element in the array.
+                if (!FD_ISSET(comm_socket_fd, &readfds))
+                {
+                    continue;
+                }
+
+                // Define the character buffer to store the data from the client
+                char buffer[BUFFER_SIZE];
+                // Clean the buffer
+                memset(buffer, 0, BUFFER_SIZE);
+
+                // Read the data from the client
+                cout<<"Waiting for the data to arrive from the client with file descriptor (fd= "<<comm_socket_fd<<")"<<endl;
+
+                ret = read(comm_socket_fd, buffer, BUFFER_SIZE);
+
+                if (ret < 0)
+                {
+                    cerr<<"read() system call failed"<<endl;
+                    return EXIT_FAILURE;
+                }
+
+                // Writing the data from the character buffer to a integer variable.
+                int data = 0;
+                memcpy(&data, buffer, sizeof(int));
+
+                // If the data sent by the client is 0, break the loop
+                if (data == 0)
+                {
+                    cout<<"Writing the final sum back to the client with file descirptor fd = ("<<comm_socket_fd<<")"<<endl;
+                    ret = write(comm_socket_fd, &client_result[i], sizeof(int));
+
+                    if (ret < 0)
+                    {
+                        cerr<<"write() system call failed"<<endl;
+                        return EXIT_FAILURE;
+                    }
+
+                    // Close the connection with client and clean the results array
+                    close(comm_socket_fd);
+                    client_result[i] = 0;
+                    remove_from_monitored_fd_set(comm_socket_fd);
+                }
+
+                // Keep adding the integers sent by the client to the results array at location 'i'
+                else
+                {
+                    client_result[i] += data; 
+                }
+                
+            }
+
+        }
     }
 
+    // ----------------------------------------------------------------
+    // 6. Final clean-up by closing the master socket file descriptor
+    // ----------------------------------------------------------------
 
+    ret = close(connection_socket);
+    remove_from_monitored_fd_set(connection_socket);
+    unlink(SOCKET_NAME);
+    cout<<"Server shut-down cleanly"<<endl;
 
-    return 0;
+    return EXIT_SUCCESS;
 }
