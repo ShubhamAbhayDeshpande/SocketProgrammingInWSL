@@ -40,6 +40,7 @@ int main()
     // 2. Creating address structure
     // ===================================================
 
+    // The following is an example of the named structure. For infomration about what are named structures and how to use them, refer the link:https://www.w3schools.com/cpp/cpp_structs.asp
     struct sockaddr_un addr; // This creates memeory to store all the information about the socket address. 
 
     // Clear structure memory

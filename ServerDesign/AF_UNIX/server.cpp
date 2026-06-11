@@ -48,6 +48,8 @@ int main()
     // 2. Creating address structure and memory for the socket connection
     // ======================================================================
 
+
+    // The following is an example of a named structure. For more information about the named structures, refer the link: https://www.w3schools.com/cpp/cpp_structs.asp
     struct sockaddr_un name; // This creates memory to store all the information about the socket address. This information can be thought of as the metadata for the socket memory. 
 
     // The following check is implemented to see if the created memory is correct. This is done using the #if and #endif directives
